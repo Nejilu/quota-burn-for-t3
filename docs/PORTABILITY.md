@@ -7,10 +7,9 @@ for what has actually been exercised.
 
 ## Native installation
 
-Install Node.js 22.14+ and Git, run `npm ci` and `npm run build`, then:
-
-On minimal Debian/Ubuntu installations, install `libatomic1` and CA certificates
-as well (`sudo apt-get install git libatomic1 ca-certificates`).
+Install Node.js 22.14+ and Git. Minimal Debian/Ubuntu installations also need
+`libatomic1` and CA certificates (`sudo apt-get install git libatomic1 ca-certificates`).
+Run `npm ci` and `npm run build`, then:
 
 ```sh
 npm run t3:start
