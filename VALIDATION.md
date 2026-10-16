@@ -40,6 +40,13 @@ They do not validate actual model execution or credit redemption in containers.
 | Supervision | Restart/Observation behavior and independent watchdog checked locally; failure cases also covered by simulated tests. |
 | Interface | Dark/light themes and local configuration flows inspected. |
 
+Account selection was also checked in an isolated browser fixture with two Codex
+accounts, a Claude account and a technical Weightings profile sharing the main
+Codex account. Goal/campaign forms showed the same three identified accounts.
+Saving a new goal used the main Codex profile; selecting the second campaign
+account submitted only that account. Missing-email labels were checked separately.
+These checks used fictitious accounts and did not dispatch inference.
+
 ## Not validated end to end
 
 - Long-running native goals stopped at real quota thresholds and resumed after

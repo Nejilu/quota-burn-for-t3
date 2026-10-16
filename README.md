@@ -81,6 +81,10 @@ credentials/binaries; they are disabled in the default remote-only image.
 
 ## Connect and configure
 
+Goals and campaigns list subscription accounts, identified by email when available
+or their T3 profile otherwise. Multiple T3 profiles using the same account share
+one entry; new goals use its main profile rather than an integration-specific one.
+
 1. Sign in to Codex with your ChatGPT account. Existing authentication in your
    Codex home is reused; otherwise run `npm.cmd exec -- codex login`.
 2. Open T3 with **Start-T3.cmd**, which generates a one-time browser pairing link.
