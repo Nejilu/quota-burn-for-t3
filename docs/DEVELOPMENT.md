@@ -3,7 +3,9 @@
 ## Local commands
 
 Use Node.js 22.14+ and `npm.cmd` on Windows. The current bootstrap targets Windows
-x64. Other platforms have not been validated.
+x64. CI runs installation, type checking, simulated tests and the frontend build
+on Windows and Ubuntu. This does not validate a live Linux T3 integration; see
+[Linux and containers](PORTABILITY.md).
 
 ```powershell
 npm.cmd ci

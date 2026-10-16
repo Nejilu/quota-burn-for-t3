@@ -1,11 +1,13 @@
 # Quota Burn for T3
 
-A local companion to [T3 Code](https://github.com/pingdotgg/t3code) that schedules
+A companion to [T3 Code](https://github.com/pingdotgg/t3code) that schedules
 goals around subscription quota resets. Save goals, select one, and let the
 scheduler decide when to run it. Campaigns can override the automatic schedule.
 
-Currently a **Windows x64 development release**, without Docker or WSL.
-The interface is in English, with dark and light themes.
+The interface is in English, with dark and light themes. The application uses
+React, Node.js and SQLite. The current installation guide and launchers target
+Windows x64; Linux service integration and container packaging are not yet
+provided. See [Linux and containers](docs/PORTABILITY.md) for the current boundaries.
 
 ## Provider support
 
@@ -26,7 +28,7 @@ The defaults of **16 weekly points per Codex window** and **13 per Claude window
 are adjustable estimates, not provider guarantees. There is no verified universal
 13% ratio for Claude.
 
-## Install
+## Install on Windows
 
 Requirements: Windows x64, Git, Node.js **22.14+**, and a supported subscription.
 T3, Codex CLI and Claude Code are installed as local dependencies; global CLI
@@ -105,8 +107,9 @@ startup task is installed.
 - **Stop-T3.cmd** stops T3 and its agents, including manual work. Finish that work
   before using it.
 
-Local data lives in `.runtime/` and is excluded from Git. Do not expose either
-service directly to the Internet. Debian/container deployment is not included.
+Local data lives in `.runtime/` and is excluded from Git. The current HTTP server
+accepts loopback access only. A hosted installation needs the networking,
+authentication and T3 integration work described in [Linux and containers](docs/PORTABILITY.md).
 
 ## Development and validation
 

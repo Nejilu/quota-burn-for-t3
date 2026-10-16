@@ -13,6 +13,8 @@ watchdog behavior, and HTTP session/origin/CSRF checks.
 
 Inference and reset adapters are simulated. The HTTP tests use an isolated data
 directory and do not dispatch to a real provider.
+CI runs these checks on Windows and Ubuntu; passing Linux checks validates the
+tested core paths, not the Windows launchers or live provider integrations.
 
 ## Local checks performed
 
