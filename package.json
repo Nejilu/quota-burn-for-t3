@@ -1,0 +1,47 @@
+{
+  "name": "quota-burn-for-t3",
+  "version": "0.2.0",
+  "private": true,
+  "description": "Local quota-aware scheduling for native goals in T3 Code",
+  "type": "module",
+  "scripts": {
+    "t3:start": "node scripts/t3-local.mjs start",
+    "t3:stop": "node scripts/t3-local.mjs stop",
+    "t3:status": "node scripts/t3-local.mjs status",
+    "t3:check": "node scripts/t3-local.mjs check",
+    "t3:open": "node scripts/pair-browser.mjs --open",
+    "build": "vite build",
+    "typecheck": "tsc --noEmit",
+    "test": "node --test test/*.test.mjs",
+    "start": "node server/index.mjs",
+    "burn:start": "node scripts/burn-local.mjs start",
+    "burn:stop": "node scripts/burn-local.mjs stop",
+    "burn:status": "node scripts/burn-local.mjs status"
+  },
+  "engines": {
+    "node": ">=22.14.0"
+  },
+  "devDependencies": {
+    "@anthropic-ai/claude-code": "2.1.301",
+    "@openai/codex": "0.162.1",
+    "@types/react": "19.3.0",
+    "@types/react-dom": "19.3.0",
+    "t3": "latest",
+    "typescript": "7.0.2",
+    "vite": "8.3.4"
+  },
+  "dependencies": {
+    "react": "19.3.1",
+    "react-dom": "19.3.1",
+    "zod": "4.6.7"
+  },
+  "license": "MIT",
+  "repository": {
+    "type": "git",
+    "url": "https://github.com/Nejilu/quota-burn-for-t3.git"
+  },
+  "bugs": {
+    "url": "https://github.com/Nejilu/quota-burn-for-t3/issues"
+  },
+  "homepage": "https://github.com/Nejilu/quota-burn-for-t3#readme"
+}
