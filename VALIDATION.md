@@ -5,7 +5,7 @@ Reference environment: Windows x64, T3 0.1.0, Codex CLI 0.162.1 and Claude Code
 
 ## Automated checks
 
-The current checks pass: TypeScript validation, 91 automated tests and the
+The current checks pass: TypeScript validation, 96 automated tests and the
 production build. Run `npm.cmd run typecheck`, `npm.cmd test` and `npm.cmd run build`.
 The suite covers planner boundaries and partial windows, policies and campaign
 caps, provider normalization, protocol compatibility, native ownership and Stop,
@@ -33,7 +33,15 @@ tested core paths, not the Windows launchers or live provider integrations.
 - Real Claude goal execution, pause/resume, or multi-account execution.
 - Real Codex or Claude reset-credit redemption, including uncertain provider outcomes.
 - Codex Pro accounts that report no session window; these are unsupported.
-- macOS, Linux, Debian containers, public hosting or remote authentication.
+- Real quota-driven work over multiple sessions in a hosted deployment.
+- ARM64 and macOS installations; platform binary selection alone is not validation.
+
+Native startup and container smoke checks are defined in CI. They exercise a real
+T3 server without provider sign-in, including remote authentication and folder
+validation, hosted password enforcement, persistence and watchdog survival after
+worker loss. Consult the corresponding workflow result before treating these
+checks as passed. The Windows installation's real remote-session connection and
+folder-metadata lookup have also been checked without inference.
 
 The Claude credit bridge uses version-dependent provider endpoints. Simulated
 contract tests do not establish compatibility with all live accounts or releases.

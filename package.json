@@ -16,7 +16,11 @@
     "start": "node server/index.mjs",
     "burn:start": "node scripts/burn-local.mjs start",
     "burn:stop": "node scripts/burn-local.mjs stop",
-    "burn:status": "node scripts/burn-local.mjs status"
+    "burn:status": "node scripts/burn-local.mjs status",
+    "t3:session": "node scripts/issue-t3-session.mjs",
+    "access:password": "node scripts/create-access-password.mjs",
+    "claude:login": "node scripts/connect-claude.mjs",
+    "smoke:local": "node scripts/smoke-local.mjs"
   },
   "engines": {
     "node": ">=22.14.0"

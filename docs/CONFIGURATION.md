@@ -2,7 +2,7 @@
 
 ## Accounts and connection
 
-Quota Burn discovers enabled provider instances through local T3. Instances with
+Quota Burn discovers enabled provider instances through T3, locally or remotely. Instances with
 the same account identity are grouped within their provider. Codex and Claude
 budgets remain separate. Other clients using the same subscription consume the
 same quota, including clients on another machine.
@@ -136,3 +136,7 @@ public API. Neither provider's real redemption path has been validated end to en
 
 Private diagnostics are in `.runtime/*.log`. Review and redact logs before sharing
 them; they can contain paths, conversation content or account information.
+
+For native Linux, separate T3 servers and password-protected hosted access, see
+[Windows, Linux and containers](PORTABILITY.md). Remote mode disables local reset
+bridges unless provider access is explicitly configured.

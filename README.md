@@ -5,9 +5,9 @@ goals around subscription quota resets. Save goals, select one, and let the
 scheduler decide when to run it. Campaigns can override the automatic schedule.
 
 The interface is in English, with dark and light themes. The application uses
-React, Node.js and SQLite. The current installation guide and launchers target
-Windows x64; Linux service integration and container packaging are not yet
-provided. See [Linux and containers](docs/PORTABILITY.md) for the current boundaries.
+React, Node.js and SQLite. Native Windows/Linux launchers and a Linux Docker
+deployment are included. Use T3 on the same machine or connect to a separate
+T3 server. See [Linux and containers](docs/PORTABILITY.md) for installation.
 
 ## Provider support
 
@@ -30,7 +30,7 @@ are adjustable estimates, not provider guarantees. There is no verified universa
 
 ## Install on Windows
 
-Requirements: Windows x64, Git, Node.js **22.14+**, and a supported subscription.
+Requirements: Windows x64/arm64, Git, Node.js **22.14+**, and a supported subscription.
 T3, Codex CLI and Claude Code are installed as local dependencies; global CLI
 installations are left alone.
 
@@ -47,6 +47,36 @@ T3 is at **http://127.0.0.1:3773**.
 
 A fresh installation starts in **Observation mode**: it reads quotas and computes
 decisions without automatically starting goals or using reset credits.
+
+## Install on Linux
+
+Use a current Debian/Ubuntu environment (x64 or arm64), Node.js 22.14+ and Git.
+The launcher selects the matching bundled T3/Codex binaries.
+
+```sh
+git clone https://github.com/Nejilu/quota-burn-for-t3.git
+cd quota-burn-for-t3
+npm ci
+npm run build
+npm exec -- codex login
+npm run t3:start
+npm run burn:start
+```
+
+Open `http://127.0.0.1:4317`. `npm run t3:open` prints a one-time local T3 pairing
+link; on a headless server, use an SSH tunnel to the same loopback ports. Stop with
+`npm run burn:stop` and, separately, `npm run t3:stop`.
+
+## Docker / separate T3 server
+
+The included Compose deployment runs Quota Burn and its independent watchdog,
+with persistent SQLite storage. It connects to an existing T3 server using a
+private credential file; no T3 database or project volume is required.
+
+See [container setup](docs/PORTABILITY.md#docker-compose) for credentials,
+networking and hosted access. Quota reads, campaigns and goals use T3 remotely.
+Reset-credit operations additionally require configured local access to provider
+credentials/binaries; they are disabled in the default remote-only image.
 
 ## Connect and configure
 
@@ -107,9 +137,10 @@ startup task is installed.
 - **Stop-T3.cmd** stops T3 and its agents, including manual work. Finish that work
   before using it.
 
-Local data lives in `.runtime/` and is excluded from Git. The current HTTP server
-accepts loopback access only. A hosted installation needs the networking,
-authentication and T3 integration work described in [Linux and containers](docs/PORTABILITY.md).
+Native local data lives in `.runtime/` and is excluded from Git. Native defaults
+accept loopback access only. Hosted access requires a password file and an
+explicit public origin; use HTTPS through your reverse proxy. See
+[Linux and containers](docs/PORTABILITY.md).
 
 ## Development and validation
 

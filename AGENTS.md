@@ -1,7 +1,7 @@
 # Quota Burn development
 
-This directory is the native Windows development environment for the T3 quota
-orchestrator. Read README.md and docs/DEVELOPMENT.md first.
+Quota Burn supports native Windows/Linux and a separate Linux container.
+Read README.md, docs/DEVELOPMENT.md and docs/PORTABILITY.md first.
 
 - Develop against local T3 at http://127.0.0.1:3773. VPS deployment is a later step.
 - Use npm.cmd on Windows. package-lock.json records reproducible installed versions.
@@ -25,8 +25,15 @@ orchestrator. Read README.md and docs/DEVELOPMENT.md first.
 - Validate with npm.cmd run typecheck, npm.cmd test and npm.cmd run build.
   Tests must use simulated inference/reset adapters; real model tests require
   authorization for the specific quota-consuming test.
-- Serve the built frontend with the backend on 127.0.0.1:4317. Keep this Windows
-  app private; VPS deployment and remote authentication are a separate task.
+- Keep native defaults on loopback. Hosted binds require an access-password file
+  and an explicit public origin. Preserve Host/Origin/CSRF checks behind proxies.
+- Remote T3 uses a rotatable server credential file and remote folder validation.
+  Never read local provider credentials or advertise reset support in remote mode
+  unless local provider access was explicitly configured.
+- Use the external watchdog service in containers. PID numbers are local to a
+  namespace; do not use another container's PID as proof of ownership/liveness.
+- CI smoke checks must use disposable data without subscription login, inference
+  or reset redemption. Preserve the real Windows installation during testing.
 
 - Supported providers: Codex and Claude Code. Protocol 2 uses native goals; protocol 1
   retains the legacy adapter. Accept newer releases with the same wire contract. Keep budgets

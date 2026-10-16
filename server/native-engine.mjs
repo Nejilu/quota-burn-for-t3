@@ -1,5 +1,5 @@
+import { overlappingWorkspace } from './platform.mjs';
 import { randomUUID } from 'node:crypto';
-import { resolve } from 'node:path';
 import { isBusy, userIntervened, campaignEnd, plan, quotaWindowsValid } from './planner.mjs';
 import { extraQuotaBlock } from './providers.mjs';
 
@@ -15,7 +15,7 @@ const sameGoal=(a,b)=>typeof a==='string'&&typeof b==='string'&&a.trim()===b.tri
 
 export async function launchV2(project,account,campaign,{single=false}={}) {
   this.validateModel(project);
-  if(this.requireWatchdog){const guard=this.store.get('watchdog','global');if(!guard||Date.now()-Date.parse(guard.checkedAt)>15000)throw new Error('Quota Burn watchdog is not ready.');try{process.kill(guard.pid,0);}catch{throw new Error('Quota Burn watchdog is not running.');}}
+  if(this.requireWatchdog){const guard=this.store.get('watchdog','global');if(!guard||Date.now()-Date.parse(guard.checkedAt)>15000)throw new Error('Quota Burn watchdog is not ready.');try{if(process.env.QP_WATCHDOG_MODE!=='external')process.kill(guard.pid,0);}catch{throw new Error('Quota Burn watchdog is not running.');}}
   const instance=account.instances.find(i=>project.instanceIds.includes(i.id));
   if(!instance)throw new Error('Account not allowed for this goal.');
   const native=!single;
@@ -122,7 +122,7 @@ export async function pollNativeRun(run) {
   const settings=this.store.settings();
   const prohibited=settings.mode==='paused'||(!run.single&&settings.mode!=='active')||p.state==='paused'||policy.paused||(!run.single&&!policy.enabled&&!c);
   const otherWork=(this.t3.shell?.threads||[]).some(t=>t.id!==run.threadId&&t.lineage?.rootThreadId!==run.threadId&&isBusy(t)&&
-    (a?.instances.some(i=>i.id===t.modelSelection?.instanceId)||(this.t3.shell.projects||[]).some(s=>s.id===t.projectId&&resolve(s.workspaceRoot).toLowerCase()===p.repositoryRoot.toLowerCase())));
+    (this.t3.remote||a?.instances.some(i=>i.id===t.modelSelection?.instanceId)||(this.t3.shell.projects||[]).some(s=>s.id===t.projectId&&overlappingWorkspace(s.workspaceRoot,p.repositoryRoot))));
   const guard=this.store.get('watchdog','global');
   const guardAbsent=this.requireWatchdog&&(!guard||!Number.isFinite(Date.parse(guard.checkedAt))||Date.now()-Date.parse(guard.checkedAt)>15000);
   const unsafeRecovery=this.t3.rawConfig?.settings?.autoResumeLimitedThreads===true;

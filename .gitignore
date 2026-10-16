@@ -17,3 +17,5 @@ credentials.json
 .credentials.json
 .DS_Store
 Thumbs.db
+secrets/
+*.session.json

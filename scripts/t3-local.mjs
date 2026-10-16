@@ -1,3 +1,6 @@
+import { processIdentity, stopOwnedProcess } from './process-control.mjs';
+import { T3_BINARY, CODEX_BINARY, T3_HOME } from '../server/paths.mjs';
+import { sameWorkspace } from '../server/platform.mjs';
 import { negotiateT3 } from '../server/t3-compat.mjs';
 import { spawn, spawnSync } from 'node:child_process';
 import { randomUUID } from 'node:crypto';
@@ -9,14 +12,11 @@ import { createConnection } from 'node:net';
 
 const root = resolve(dirname(fileURLToPath(import.meta.url)), '..');
 const runtime = join(root, '.runtime');
-const baseDir = join(runtime, 't3');
+const baseDir = T3_HOME;
 const origin = 'http://127.0.0.1:3773';
 const stateFile = join(runtime, 'server.json');
-if (process.platform !== 'win32' || process.arch !== 'x64') {
-  throw new Error('This bootstrap currently targets native Windows x64.');
-}
-const t3 = join(root, 'node_modules', '@t3code', 't3-win32-x64', 't3.exe');
-const codex = join(root, 'node_modules', '@openai', 'codex-win32-x64', 'vendor', 'x86_64-pc-windows-msvc', 'bin', 'codex.exe');
+const t3 = T3_BINARY;
+const codex = CODEX_BINARY;
 const codexHome = resolve(process.env.CODEX_HOME || join(homedir(), '.codex'));
 const environment = { ...process.env, PATH: `${dirname(codex)}${delimiter}${join(root, 'node_modules', '.bin')}${delimiter}${process.env.PATH || ''}` };
 let wireProtocol = 2;
@@ -107,7 +107,7 @@ async function start() {
       enableProviderUpdateChecks: false,
       defaultRuntimeMode: 'approval-required',
       defaultModelSelection: { instanceId: 'codex', model: 'gpt-6.1-sol' },
-      providerInstances: { codex: { driver: 'codex', displayName: 'Codex Windows', enabled: true, config: { binaryPath: codex, homePath: codexHome } } },
+      providerInstances: { codex: { driver: 'codex', displayName: 'Codex', enabled: true, config: { binaryPath: codex, homePath: codexHome } } },
     }, null, 2) + '\n', { flag: 'wx' });
   }
   const out = await open(join(runtime, 't3.stdout.log'), 'a');
@@ -120,7 +120,7 @@ async function start() {
     await new Promise((r, j) => { child.once('spawn', r); child.once('error', j); });
     child.unref();
   } finally { await out.close(); await err.close(); }
-  await writeFile(stateFile, JSON.stringify({ pid: child.pid, executable: t3, baseDir, origin, startedAt: new Date().toISOString() }, null, 2) + '\n');
+  await writeFile(stateFile, JSON.stringify({ pid: child.pid, ...await processIdentity(child.pid), executable: t3, baseDir, origin, startedAt: new Date().toISOString() }, null, 2) + '\n');
   for (let i = 0; i < 45; i++) {
     try { await descriptor(); console.log(`T3 started: ${origin}`); return; }
     catch { await sleep(1000); }
@@ -140,7 +140,7 @@ async function check() {
     }
     if (!provider.models?.length) throw new Error('T3 did not report a Codex model catalog.');
     let shell = await request('/api/orchestration/shell', token);
-    let project = shell.projects.find((p) => resolve(p.workspaceRoot).toLowerCase() === root.toLowerCase());
+    let project = shell.projects.find((p) => sameWorkspace(p.workspaceRoot,root));
     if (!project) {
       await (wireProtocol===2 ? ((command)=>rpc(token,'projects.mutate',command)) : ((command)=>request('/api/orchestration/dispatch',token,command)))({ type: 'project.create', commandId: randomUUID(), projectId: 'quota-burn', title: 'Quota Burn', workspaceRoot: root, createdAt: new Date().toISOString() });
       shell = await request('/api/orchestration/shell', token);
@@ -165,9 +165,9 @@ async function check() {
 }
 
 async function stop() {
-  const result = spawnSync('powershell.exe', ['-NoProfile', '-ExecutionPolicy', 'Bypass', '-File', join(root, 'scripts', 'Stop-T3.ps1'), '-StateFile', stateFile], { cwd: root, windowsHide: true, encoding: 'utf8', timeout: 20_000 });
-  if (result.status !== 0 || result.error) throw new Error('T3 stop failed; the process identity must be checked before retrying.');
-  console.log(result.stdout.trim());
+  const saved=JSON.parse(await readFile(stateFile,'utf8'));
+  await stopOwnedProcess({...saved,file:stateFile},root,'t3');
+  console.log('Local T3 stopped. Its project data is preserved.');
 }
 
 try {

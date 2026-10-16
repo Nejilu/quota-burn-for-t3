@@ -25,7 +25,7 @@ export async function withClaude(instance, action, { request = fetch, read = rea
   if (instance.resetAllowed === false) throw Error('Reset credits require a Claude subscription login.');
   let credentials;
   try { credentials = JSON.parse(await read(join(instance.home, '.credentials.json'), 'utf8')); }
-  catch { throw Error('Sign in to Claude Code on this PC to read reset credits.'); }
+  catch { throw Error('Sign in to Claude Code on this machine to read reset credits.'); }
   const token = credentials.claudeAiOauth?.accessToken;
   if (!token) throw Error('A Claude subscription login is required for reset credits.');
   const headers = { Authorization: `Bearer ${token}`, 'anthropic-beta': 'oauth-2025-04-20',

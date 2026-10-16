@@ -1,0 +1,49 @@
+name: quota-burn
+
+x-runtime: &runtime
+  image: quota-burn:local
+  build: .
+  init: true
+  restart: unless-stopped
+  stop_grace_period: 90s
+  environment: &environment
+    QP_HOST: 0.0.0.0
+    QP_PUBLIC_ORIGIN: ${QP_PUBLIC_ORIGIN:-http://127.0.0.1:4317}
+    QP_ACCESS_PASSWORD_FILE: /run/secrets/access-password
+    QP_T3_ORIGIN: ${QP_T3_ORIGIN:?Set the private T3 server origin}
+    QP_T3_PUBLIC_ORIGIN: ${QP_T3_PUBLIC_ORIGIN:-http://127.0.0.1:3773}
+    QP_T3_TOKEN_FILE: /run/credentials/t3-session.json
+    QP_DATA_DIR: /data
+    QP_WATCHDOG_MODE: external
+    QP_WATCHDOG_ORIGIN: http://quota-burn:4317
+  volumes:
+    - data:/data
+    # Mount the directory so atomic credential replacement is visible without restart.
+    - type: bind
+      source: ${QP_CREDENTIALS_DIR:-./.runtime/secrets}
+      target: /run/credentials
+      read_only: true
+  secrets:
+    - access-password
+  extra_hosts:
+    - host.docker.internal:host-gateway
+
+services:
+  quota-burn:
+    <<: *runtime
+    ports:
+      - "127.0.0.1:4317:4317"
+  watchdog:
+    <<: *runtime
+    command: ["node", "server/watchdog.mjs"]
+    healthcheck:
+      test: ["CMD", "node", "--input-type=module", "-e", "import {Store} from './server/store.mjs';const s=new Store('/data/quota-pilot.sqlite');const g=s.get('watchdog','global');s.close();process.exit(g&&Date.now()-Date.parse(g.checkedAt)<20000?0:1)"]
+      interval: 15s
+      timeout: 5s
+      start_period: 25s
+
+volumes:
+  data:
+secrets:
+  access-password:
+    file: ${QP_ACCESS_PASSWORD_PATH:-./.runtime/secrets/access-password}

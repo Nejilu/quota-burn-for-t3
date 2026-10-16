@@ -2,9 +2,9 @@
 
 ## Local commands
 
-Use Node.js 22.14+ and `npm.cmd` on Windows. The current bootstrap targets Windows
-x64. CI runs installation, type checking, simulated tests and the frontend build
-on Windows and Ubuntu. This does not validate a live Linux T3 integration; see
+Use Node.js 22.14+, Git and `npm.cmd` on Windows (`npm` on Linux). CI runs
+installation, type checking, simulated tests, frontend build and disposable native
+T3 startup on Windows and Ubuntu, plus container integration on Linux. See
 [Linux and containers](PORTABILITY.md).
 
 ```powershell
@@ -20,7 +20,8 @@ npm.cmd run burn:status
 The backend serves the built frontend on `127.0.0.1:4317`; T3 uses port 3773.
 Rebuild and reload after frontend changes. For backend changes, run
 `npm.cmd run burn:stop` then `npm.cmd run burn:start`. `npm.cmd start` runs the
-backend in the foreground. The Windows launchers use the default ports.
+backend in the foreground. Linux launchers use the same npm commands.
+The local T3 launcher uses port 3773; the backend accepts `QP_PORT`.
 
 Tests use simulated inference/reset adapters and an isolated HTTP service. Never
 run real model or reset tests without authorization for that specific operation.
@@ -38,8 +39,9 @@ run real model or reset tests without authorization for that specific operation.
 | `server/store.mjs` | SQLite persistence |
 | `server/index.mjs` | Local HTTP API and frontend serving |
 | `server/watchdog.mjs` | Independent supervision of native work |
+| `server/platform.mjs`, `server/http-config.mjs` | Platform paths, hosted authentication and origin policy |
 | `src/main.tsx`, `src/*.css` | React UI and themes |
-| `scripts/` | Windows process management, pairing and Claude sign-in |
+| `scripts/` | Windows/Linux process management, pairing, credentials and smoke checks |
 
 The supervisor checks every five seconds. If scheduling or managed observations
 are stale for over 45 seconds, it requests Stop for verified owned runs. The main
@@ -69,16 +71,23 @@ before enabling automation. Configuration export is private, has no import UI
 and is not a conversation/history backup.
 
 Never commit runtime data, provider homes, tokens or unredacted diagnostics.
-The API binds to loopback and uses host/origin checks, an HttpOnly SameSite Strict
-session and CSRF protection. This is a single-user local app. Public hosting,
-remote authentication and container deployment require separate work.
+Loopback remains the default. Hosted mode adds password authentication and an
+explicit origin; see [deployment configuration](PORTABILITY.md). The Compose
+deployment keeps the watchdog in a separate container from the worker.
 
 ## Configuration overrides
 
-Advanced backend overrides: `QP_DATA_DIR`, `QP_T3_HOME`, `QP_T3_ORIGIN`,
-`QP_T3_BINARY`, `QP_CODEX_BINARY` and `QP_PORT`. See `server/paths.mjs` and
-`server/index.mjs`. These do not automatically reconfigure the Windows launchers;
-use the default layout unless developing a different integration.
+Backend overrides: `QP_DATA_DIR`, `QP_T3_HOME`, `QP_T3_ORIGIN`, `QP_T3_PUBLIC_ORIGIN`,
+`QP_T3_BINARY`, `QP_CODEX_BINARY`, `QP_CLAUDE_BINARY`, `QP_PORT`, `QP_HOST`,
+`QP_PUBLIC_ORIGIN`, `QP_ACCESS_PASSWORD_FILE`, `QP_ACCESS_USER`, `QP_T3_TOKEN_FILE`,
+`QP_PROVIDER_ACCESS`, `QP_WATCHDOG_MODE` and `QP_WATCHDOG_ORIGIN`.
+See `server/paths.mjs`, `server/http-config.mjs` and the deployment guide.
+
+`smoke:local` requires a disposable CI checkout. `scripts/smoke-container.mjs`
+creates isolated Docker resources, tests a real unauthenticated T3 server and
+removes its own containers/volumes. Neither uses subscription credentials,
+starts a model turn or redeems a reset. Container tests also check password
+enforcement, remote folders, persistence and watchdog survival after worker loss.
 
 ## Dependencies and updates
 
