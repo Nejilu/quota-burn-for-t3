@@ -51,7 +51,8 @@ decisions without automatically starting goals or using reset credits.
 ## Install on Linux
 
 Use a current Debian/Ubuntu environment (x64 or arm64), Node.js 22.14+ and Git.
-The launcher selects the matching bundled T3/Codex binaries.
+Minimal systems also need `libatomic1` and CA certificates. The launcher selects
+the matching bundled T3/Codex binaries.
 
 ```sh
 git clone https://github.com/Nejilu/quota-burn-for-t3.git

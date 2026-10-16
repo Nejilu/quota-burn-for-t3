@@ -9,6 +9,9 @@ for what has actually been exercised.
 
 Install Node.js 22.14+ and Git, run `npm ci` and `npm run build`, then:
 
+On minimal Debian/Ubuntu installations, install `libatomic1` and CA certificates
+as well (`sudo apt-get install git libatomic1 ca-certificates`).
+
 ```sh
 npm run t3:start
 npm run burn:start
@@ -95,7 +98,8 @@ Password changes take effect after restarting Quota Burn.
 The image runs as UID/GID 1000. Private files/directories must be readable and
 traversable by that user; preserve restrictive permissions rather than making
 credentials public. The SQLite named volume is initialized for the same user.
-The runtime image contains no provider homes or authenticated CLI installation.
+The runtime image includes Codex/Claude binaries for optional credit bridges,
+but contains no provider homes or authentication credentials.
 
 Compose runs:
 
@@ -149,8 +153,10 @@ work even when Git repository identity is unavailable across machines.
 
 Detailed reset credits/redemption still use provider-specific local bridges.
 The default remote image disables these controls. They become available only
-with `QP_PROVIDER_ACCESS=local`, matching provider-home paths and suitable local
-binaries (`QP_CODEX_BINARY`, `QP_CLAUDE_BINARY` overrides are available). Codex may
+with `QP_PROVIDER_ACCESS=local` and matching provider-home paths, explicitly
+configured in T3. Bind those homes at the same absolute paths in Quota Burn;
+no workspace or T3-database mount is needed. The image includes matching CLI
+binaries (`QP_CODEX_BINARY`, `QP_CLAUDE_BINARY` overrides are also available). Codex may
 refresh its own authentication, so its home needs the appropriate write access.
 Claude uses its existing file-based credentials and account metadata.
 
