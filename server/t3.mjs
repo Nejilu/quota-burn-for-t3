@@ -2,7 +2,7 @@ import { negotiateT3,normalizeV2ShellThread,normalizeV2Projection } from './t3-c
 import { execFile } from 'node:child_process';
 import { promisify } from 'node:util';
 import { readFile,realpath } from 'node:fs/promises';
-import { join,resolve,win32 } from 'node:path';
+import { join,resolve,win32,isAbsolute } from 'node:path';
 import { sameWorkspace } from './platform.mjs';
 import { homedir } from 'node:os';
 import { createHash,randomUUID } from 'node:crypto';
@@ -28,13 +28,14 @@ export class T3Adapter {
       const inherited = p.driver === 'codex' ? environment.CODEX_HOME || (!this.remote?process.env.CODEX_HOME:null) : environment.CLAUDE_CONFIG_DIR || (!this.remote?process.env.CLAUDE_CONFIG_DIR:null);
       const chosen = explicit?.trim() || inherited || join(homedir(),p.driver === 'codex' ? '.codex' : '.claude');
       const home = this.remote?chosen:resolve(chosen.startsWith('~') ? join(homedir(),chosen.slice(2)) : chosen);
+      const filesAllowed=this.providerLocal&&(!this.remote||!!(explicit?.trim()||inherited)&&isAbsolute(home));
       const accountConfigPath = p.driver === 'claudeAgent' ? explicit?.trim() || inherited ? join(home,'.claude.json') : join(homedir(),'.claude.json') : null;
       let identity = p.auth?.profileId || p.usageLimits?.credentialFingerprint || null;
       if (p.driver === 'codex') {
-        if(this.providerLocal)try { const auth = JSON.parse(await readFile(join(home,'auth.json'),'utf8')); identity = auth.tokens?.account_id || auth.account_id || identity; } catch {}
+        if(filesAllowed)try { const auth = JSON.parse(await readFile(join(home,'auth.json'),'utf8')); identity = auth.tokens?.account_id || auth.account_id || identity; } catch {}
         identity ||= this.remote?(p.auth?.email||explicit||inherited||p.instanceId):p.auth?.email || await realpath(join(home,'auth.json')).catch(() => join(home,'auth.json'));
       } else {
-        if(this.providerLocal)try { const account = JSON.parse(await readFile(accountConfigPath,'utf8')).oauthAccount;
+        if(filesAllowed)try { const account = JSON.parse(await readFile(accountConfigPath,'utf8')).oauthAccount;
           if (account?.organizationUuid && (account.accountUuid || account.emailAddress)) identity = account.organizationUuid + ':' + (account.accountUuid || account.emailAddress);
         } catch {}
         identity = 'claudeAgent:' + (identity || (this.remote?(p.auth?.email||explicit||inherited||p.instanceId):await realpath(home).catch(() => home)));
@@ -44,7 +45,7 @@ export class T3Adapter {
       const session = windows.find(w => ['five_hour','primary'].includes(w.id) && w.kind === 'session') || windows.find(w => w.kind === 'session') || null;
       const weekly = windows.find(w => ['seven_day','secondary'].includes(w.id) && w.kind === 'weekly') || (windows.filter(w => w.kind === 'weekly').length === 1 ? windows.find(w => w.kind === 'weekly') : null) || null;
       const extraWindows = windows.filter(w => w !== session && w !== weekly);
-      const resetAllowed = p.auth?.status === 'authenticated' && !p.usageLimits?.unavailable &&
+      const resetAllowed = filesAllowed && p.auth?.status === 'authenticated' && !p.usageLimits?.unavailable &&
         !['ANTHROPIC_API_KEY','ANTHROPIC_AUTH_TOKEN','ANTHROPIC_BASE_URL','CLAUDE_CODE_USE_BEDROCK','CLAUDE_CODE_USE_VERTEX'].some(k => environment[k]);
       const instance = { id:p.instanceId,driver:p.driver,name:p.displayName || p.instanceId,
         models:(p.models || []).map(m => ({id:m.slug,name:m.name,options:m.capabilities?.optionDescriptors || []})),
@@ -61,7 +62,7 @@ export class T3Adapter {
       groups.set(key,{id:key,driver:p.driver,providerName:providers[p.driver].name,
         name:p.displayName || p.auth?.label || p.instanceId,label:p.auth?.email || p.auth?.label || providers[p.driver].name + ' account',
         authStatus:p.auth?.status,installed:p.installed,instances:[instance],...limits,
-        capabilities:{quotaWindows:true,resetCredits:this.providerLocal&&(p.driver === 'codex' || process.platform !== 'darwin' && resetAllowed),detailedCredits:this.providerLocal},
+        capabilities:{quotaWindows:true,resetCredits:this.providerLocal&&(!this.remote||resetAllowed)&&(p.driver === 'codex' || process.platform !== 'darwin' && resetAllowed),detailedCredits:this.providerLocal},
         defaultWindowWeeklyPoints:providers[p.driver].windowWeeklyPoints});
     }
     return [...groups.values()];

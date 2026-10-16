@@ -54,5 +54,8 @@ test('remote folders are validated on T3 and remote-only accounts never expose l
   const [account]=await a.normalize({providers:[provider],settings:{providerInstances:{c:{config:{homePath:'/remote/codex'}}}}});
   assert.equal(account.capabilities.resetCredits,false);
   assert.equal(account.instances[0].home,'/remote/codex');
+  const optedIn=new T3Adapter({tokenFile:'unused',providerLocal:true});
+  const [withoutHome]=await optedIn.normalize({providers:[provider],settings:{providerInstances:{c:{config:{}}}}});
+  assert.equal(withoutHome.capabilities.resetCredits,false,'remote access never falls back to an unrelated local default home');
   a.rpc=async()=>({entries:[null]});await assert.rejects(a.validateFolder('/missing'),/existing folder/);
 });

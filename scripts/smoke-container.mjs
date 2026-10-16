@@ -24,9 +24,11 @@ try{
   docker(['network','create',network]);networkCreated=true;docker(['volume','create',volume]);volumeCreated=true;
   docker(['run','-d','--name',names.t3,'--network',network,'--user','1000:1000','--tmpfs','/t3:uid=1000,gid=1000,mode=0700','--tmpfs','/workspace:uid=1000,gid=1000,mode=0700',
     '-v',`${secrets}:/credentials`,'-v',`${join(ROOT,'scripts')}:/app/scripts:ro`,'-v',`${join(ROOT,'server')}:/app/server:ro`,
-    '-e','QP_T3_HOME=/t3','-e','CODEX_HOME=/t3/codex','-p','127.0.0.1::3773','--entrypoint','/app/node_modules/@t3code/t3-linux-x64/t3',id+'-tools',
+    '-e','HOME=/home/node','-e','QP_T3_HOME=/t3','-e','CODEX_HOME=/t3/codex','-p','127.0.0.1::3773','--entrypoint','/app/node_modules/@t3code/t3-linux-x64/t3',id+'-tools',
     'serve','--mode','web','--host','0.0.0.0','--port','3773','--base-dir','/t3','/workspace']);created.push(names.t3);
-  const t3port=JSON.parse(docker(['inspect',names.t3]))[0].NetworkSettings.Ports['3773/tcp'][0].HostPort;
+  const t3info=JSON.parse(docker(['inspect',names.t3]))[0];
+  if(!t3info.State.Running||!t3info.NetworkSettings.Ports['3773/tcp'])throw Error('Isolated T3 container exited before listening.');
+  const t3port=t3info.NetworkSettings.Ports['3773/tcp'][0].HostPort;
   await ready(`http://127.0.0.1:${t3port}/.well-known/t3/environment`);
   docker(['exec',names.t3,'node','scripts/issue-t3-session.mjs','/credentials/t3-session.json','1h']);
   docker(['run','-d','--init','--name',names.app,'--network',network,...mounts,...environment,'-p','127.0.0.1::4317',id+'-runtime']);created.push(names.app);
@@ -51,6 +53,16 @@ try{
   state=await fetch(origin+'/api/state',{headers}).then(r=>r.json());assert.equal(state.settings.pollSeconds,45);assert.equal(state.runs.length,0);
   docker(['stop','--time','90',names.app]);assert.equal(JSON.parse(docker(['inspect',names.app]))[0].State.ExitCode,0);
   console.log('External watchdog survived worker loss; persistent settings and graceful restart/stop passed.');
+}catch(error){
+  for(const name of created){
+    const info=JSON.parse(docker(['inspect',name],{failure:true})||'[]')[0];
+    console.error(name,JSON.stringify(info?.State));
+    const p=spawnSync('docker',['logs','--tail','25',name],{encoding:'utf8'});
+    // No subscription credentials exist here; still suppress generated pairing details.
+    const text=(p.stdout||'')+(p.stderr||'');
+    console.error(text.split('\n').filter(line=>!/token|pairing|secret|credential|https?:\/\//i.test(line)).join('\n'));
+  }
+  throw error;
 }finally{
   for(const name of created.reverse())docker(['rm','-f',name],{failure:true});
   if(volumeCreated)docker(['volume','rm',volume],{failure:true});if(networkCreated)docker(['network','rm',network],{failure:true});
